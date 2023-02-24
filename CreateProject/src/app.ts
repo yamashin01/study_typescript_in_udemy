@@ -1,3 +1,15 @@
+// Drag & Drop
+interface Draggable {
+  dragStartHandler(e: DragEvent): void;
+  dragEndHandler(e: DragEvent): void;
+}
+
+interface DragTarget {
+  dragOverHandler(e: DragEvent): void;
+  dropHandler(e: DragEvent): void;
+  dragLeaveHandler(e: DragEvent): void;
+}
+
 // Project Type
 enum ProjectStatus {
   Active,
@@ -98,7 +110,6 @@ function validate(validatableInput: Validatable) {
   ) {
     isValid = isValid && validatableInput.value <= validatableInput.max;
   }
-  console.log(isValid);
 
   return isValid;
 }
@@ -154,8 +165,19 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   }
 }
 
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+class ProjectItem
+  extends Component<HTMLUListElement, HTMLLIElement>
+  implements Draggable
+{
   private project: Project;
+
+  get manday() {
+    if (this.project.manday < 20) {
+      return this.project.manday.toString() + "人日";
+    } else {
+      return (this.project.manday / 20).toString() + "人月";
+    }
+  }
 
   constructor(hostId: string, project: Project) {
     super("single-project", hostId, false, project.id);
@@ -165,11 +187,21 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
     this.renderContent();
   }
 
-  configure(): void {}
+  @autobind
+  dragStartHandler(e: DragEvent): void {
+    console.log(e);
+  }
+  dragEndHandler(e: DragEvent): void {
+    console.log(e, "Drag終了");
+  }
+
+  configure(): void {
+    this.element.addEventListener("dragstart", this.dragStartHandler);
+    this.element.addEventListener("dragend", this.dragEndHandler);
+  }
   renderContent(): void {
     this.element.querySelector("h2")!.textContent = this.project.title;
-    this.element.querySelector("h3")!.textContent =
-      this.project.manday.toString();
+    this.element.querySelector("h3")!.textContent = this.manday;
     this.element.querySelector("p")!.textContent = this.project.description;
   }
 }
