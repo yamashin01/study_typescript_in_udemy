@@ -1,5 +1,5 @@
-import { Component } from "./base-component.js";
-import { Validatable, validate } from "../util/validation.js";
+import Component from "./base-component.js";
+import * as Validation from "../util/validation.js";
 import { autobind } from "../decolators/autobind.js";
 import { pjState } from "../state/project-state.js";
 
@@ -35,26 +35,26 @@ export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
     const enteredDescrition = this.descriptionFormElement.value;
     const enteredManday = this.mandayFormElement.value;
 
-    const titleValidatable: Validatable = {
+    const titleValidatable: Validation.Validatable = {
       value: enteredTitle,
       required: true,
     };
-    const descritionValidatable: Validatable = {
+    const descritionValidatable: Validation.Validatable = {
       value: enteredDescrition,
       required: true,
       minlength: 5,
       maxlength: 100,
     };
-    const mandayValidatable: Validatable = {
+    const mandayValidatable: Validation.Validatable = {
       value: enteredManday,
       required: true,
       min: 0,
       max: 100,
     };
     if (
-      !validate(titleValidatable) ||
-      !validate(descritionValidatable) ||
-      !validate(mandayValidatable)
+      !Validation.validate(titleValidatable) ||
+      !Validation.validate(descritionValidatable) ||
+      !Validation.validate(mandayValidatable)
     ) {
       alert("入力値が誤っています");
       return;

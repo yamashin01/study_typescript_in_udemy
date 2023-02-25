@@ -5,7 +5,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { Component } from "./base-component.js";
-import { validate } from "../util/validation.js";
+import * as Validation from "../util/validation.js";
 import { autobind } from "../decolators/autobind.js";
 import { pjState } from "../state/project-state.js";
 export class ProjectInput extends Component {
@@ -40,9 +40,9 @@ export class ProjectInput extends Component {
             min: 0,
             max: 100,
         };
-        if (!validate(titleValidatable) ||
-            !validate(descritionValidatable) ||
-            !validate(mandayValidatable)) {
+        if (!Validation.validate(titleValidatable) ||
+            !Validation.validate(descritionValidatable) ||
+            !Validation.validate(mandayValidatable)) {
             alert("入力値が誤っています");
             return;
         }
