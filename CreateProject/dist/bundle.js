@@ -62,7 +62,11 @@ var App;
             }
         }
     }
-    const pjState = ProjectState.getInstance();
+    App.ProjectState = ProjectState;
+    App.pjState = ProjectState.getInstance();
+})(App || (App = {}));
+var App;
+(function (App) {
     function validate(validatableInput) {
         let isValid = true;
         if (validatableInput.required) {
@@ -89,6 +93,10 @@ var App;
         }
         return isValid;
     }
+    App.validate = validate;
+})(App || (App = {}));
+var App;
+(function (App) {
     function autobind(_, _2, descriptor) {
         const originalMethod = descriptor.value;
         const adjDescriptor = {
@@ -100,6 +108,10 @@ var App;
         };
         return adjDescriptor;
     }
+    App.autobind = autobind;
+})(App || (App = {}));
+var App;
+(function (App) {
     class Component {
         constructor(templateId, hosElementId, insertAtStart, newElementId) {
             this.templateElement = document.getElementById(templateId);
@@ -115,7 +127,146 @@ var App;
             this.hostElement.insertAdjacentElement(insertAtBeginning ? "afterbegin" : "beforeend", this.element);
         }
     }
-    class ProjectItem extends Component {
+    App.Component = Component;
+})(App || (App = {}));
+var App;
+(function (App) {
+    class ProjectList extends App.Component {
+        constructor(type) {
+            super("project-list", "app", false, `${type}-projects`);
+            this.type = type;
+            this.assignedProjects = [];
+            this.configure();
+            this.renderContent();
+        }
+        dragOverHandler(e) {
+            if (e.dataTransfer && e.dataTransfer.types[0] === "text/plain") {
+                e.preventDefault();
+                const listEl = this.element.querySelector("ul");
+                listEl.classList.add("droppable");
+            }
+        }
+        dropHandler(e) {
+            const pjId = e.dataTransfer.getData("text/plain");
+            App.pjState.moveProject(pjId, this.type === "active" ? App.ProjectStatus.Active : App.ProjectStatus.Finished);
+        }
+        dragLeaveHandler(_) {
+            const listEl = this.element.querySelector("ul");
+            listEl.classList.remove("droppable");
+        }
+        renderContent() {
+            const listId = `${this.type}-projects-list`;
+            this.element.querySelector("ul").id = listId;
+            this.element.querySelector("h2").textContent =
+                this.type === "active" ? "実行中プロジェクト" : "完了プロジェクト";
+        }
+        configure() {
+            this.element.addEventListener("dragover", this.dragOverHandler);
+            this.element.addEventListener("drop", this.dropHandler);
+            this.element.addEventListener("dragleave", this.dragLeaveHandler);
+            App.pjState.addListener((projects) => {
+                const relevantProjects = projects.filter((project) => {
+                    if (this.type === "active") {
+                        return project.status === App.ProjectStatus.Active;
+                    }
+                    return project.status === App.ProjectStatus.Finished;
+                });
+                this.assignedProjects = relevantProjects;
+                this.renderProjects();
+            });
+        }
+        renderProjects() {
+            const listEl = document.getElementById(`${this.type}-projects-list`);
+            listEl.innerHTML = "";
+            for (const pjItem of this.assignedProjects) {
+                new App.ProjectItem(listEl.id, pjItem);
+            }
+        }
+    }
+    __decorate([
+        App.autobind
+    ], ProjectList.prototype, "dragOverHandler", null);
+    __decorate([
+        App.autobind
+    ], ProjectList.prototype, "dropHandler", null);
+    __decorate([
+        App.autobind
+    ], ProjectList.prototype, "dragLeaveHandler", null);
+    App.ProjectList = ProjectList;
+})(App || (App = {}));
+var App;
+(function (App) {
+    class ProjectInput extends App.Component {
+        constructor() {
+            super("project-input", "app", true, "user-input");
+            this.titleFormElement = this.element.querySelector("#title");
+            this.descriptionFormElement = this.element.querySelector("#description");
+            this.mandayFormElement = this.element.querySelector("#manday");
+            this.configure();
+        }
+        renderContent() { }
+        configure() {
+            this.element.addEventListener("submit", this.submitHandler);
+        }
+        gatherMethodInput() {
+            const enteredTitle = this.titleFormElement.value;
+            const enteredDescrition = this.descriptionFormElement.value;
+            const enteredManday = this.mandayFormElement.value;
+            const titleValidatable = {
+                value: enteredTitle,
+                required: true,
+            };
+            const descritionValidatable = {
+                value: enteredDescrition,
+                required: true,
+                minlength: 5,
+                maxlength: 100,
+            };
+            const mandayValidatable = {
+                value: enteredManday,
+                required: true,
+                min: 0,
+                max: 100,
+            };
+            if (!App.validate(titleValidatable) ||
+                !App.validate(descritionValidatable) ||
+                !App.validate(mandayValidatable)) {
+                alert("入力値が誤っています");
+                return;
+            }
+            else {
+                return [enteredTitle, enteredDescrition, +enteredManday];
+            }
+        }
+        submitHandler(e) {
+            e.preventDefault();
+            const userInput = this.gatherMethodInput();
+            if (Array.isArray(userInput)) {
+                const [title, desc, manday] = userInput;
+                App.pjState.addProject(title, desc, manday);
+                this.clearInput();
+            }
+        }
+        clearInput() {
+            this.titleFormElement.value = "";
+            this.descriptionFormElement.value = "";
+            this.mandayFormElement.value = "";
+        }
+    }
+    __decorate([
+        App.autobind
+    ], ProjectInput.prototype, "submitHandler", null);
+    App.ProjectInput = ProjectInput;
+})(App || (App = {}));
+var App;
+(function (App) {
+    new App.ProjectInput();
+    new App.ProjectList("active");
+    new App.ProjectList("finished");
+})(App || (App = {}));
+var App;
+(function (App) {
+    class ProjectItem extends App.Component {
         get manday() {
             if (this.project.manday < 20) {
                 return this.project.manday.toString() + "人日";
@@ -148,130 +299,7 @@ var App;
         }
     }
     __decorate([
-        autobind
+        App.autobind
     ], ProjectItem.prototype, "dragStartHandler", null);
-    class ProjectList extends Component {
-        constructor(type) {
-            super("project-list", "app", false, `${type}-projects`);
-            this.type = type;
-            this.assignedProjects = [];
-            this.configure();
-            this.renderContent();
-        }
-        dragOverHandler(e) {
-            if (e.dataTransfer && e.dataTransfer.types[0] === "text/plain") {
-                e.preventDefault();
-                const listEl = this.element.querySelector("ul");
-                listEl.classList.add("droppable");
-            }
-        }
-        dropHandler(e) {
-            const pjId = e.dataTransfer.getData("text/plain");
-            pjState.moveProject(pjId, this.type === "active" ? App.ProjectStatus.Active : App.ProjectStatus.Finished);
-        }
-        dragLeaveHandler(_) {
-            const listEl = this.element.querySelector("ul");
-            listEl.classList.remove("droppable");
-        }
-        renderContent() {
-            const listId = `${this.type}-projects-list`;
-            this.element.querySelector("ul").id = listId;
-            this.element.querySelector("h2").textContent =
-                this.type === "active" ? "実行中プロジェクト" : "完了プロジェクト";
-        }
-        configure() {
-            this.element.addEventListener("dragover", this.dragOverHandler);
-            this.element.addEventListener("drop", this.dropHandler);
-            this.element.addEventListener("dragleave", this.dragLeaveHandler);
-            pjState.addListener((projects) => {
-                const relevantProjects = projects.filter((project) => {
-                    if (this.type === "active") {
-                        return project.status === App.ProjectStatus.Active;
-                    }
-                    return project.status === App.ProjectStatus.Finished;
-                });
-                this.assignedProjects = relevantProjects;
-                this.renderProjects();
-            });
-        }
-        renderProjects() {
-            const listEl = document.getElementById(`${this.type}-projects-list`);
-            listEl.innerHTML = "";
-            for (const pjItem of this.assignedProjects) {
-                new ProjectItem(listEl.id, pjItem);
-            }
-        }
-    }
-    __decorate([
-        autobind
-    ], ProjectList.prototype, "dragOverHandler", null);
-    __decorate([
-        autobind
-    ], ProjectList.prototype, "dropHandler", null);
-    __decorate([
-        autobind
-    ], ProjectList.prototype, "dragLeaveHandler", null);
-    class ProjectInput extends Component {
-        constructor() {
-            super("project-input", "app", true, "user-input");
-            this.titleFormElement = this.element.querySelector("#title");
-            this.descriptionFormElement = this.element.querySelector("#description");
-            this.mandayFormElement = this.element.querySelector("#manday");
-            this.configure();
-        }
-        renderContent() { }
-        configure() {
-            this.element.addEventListener("submit", this.submitHandler);
-        }
-        gatherMethodInput() {
-            const enteredTitle = this.titleFormElement.value;
-            const enteredDescrition = this.descriptionFormElement.value;
-            const enteredManday = this.mandayFormElement.value;
-            const titleValidatable = {
-                value: enteredTitle,
-                required: true,
-            };
-            const descritionValidatable = {
-                value: enteredDescrition,
-                required: true,
-                minlength: 5,
-                maxlength: 100,
-            };
-            const mandayValidatable = {
-                value: enteredManday,
-                required: true,
-                min: 0,
-                max: 100,
-            };
-            if (!validate(titleValidatable) ||
-                !validate(descritionValidatable) ||
-                !validate(mandayValidatable)) {
-                alert("入力値が誤っています");
-                return;
-            }
-            else {
-                return [enteredTitle, enteredDescrition, +enteredManday];
-            }
-        }
-        submitHandler(e) {
-            e.preventDefault();
-            const userInput = this.gatherMethodInput();
-            if (Array.isArray(userInput)) {
-                const [title, desc, manday] = userInput;
-                pjState.addProject(title, desc, manday);
-                this.clearInput();
-            }
-        }
-        clearInput() {
-            this.titleFormElement.value = "";
-            this.descriptionFormElement.value = "";
-            this.mandayFormElement.value = "";
-        }
-    }
-    __decorate([
-        autobind
-    ], ProjectInput.prototype, "submitHandler", null);
-    new ProjectInput();
-    new ProjectList("active");
-    new ProjectList("finished");
+    App.ProjectItem = ProjectItem;
 })(App || (App = {}));
