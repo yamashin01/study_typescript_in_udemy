@@ -527,3 +527,160 @@ numberStorage.addItem(1);
 
 // const objectStorage = new DataStorage<object>();  // objectは参照型のため誤作動を起こす
 ```
+
+## Webpack と Typescript
+
+### Webpack とは
+
+HTTP リクエストを削減し、高速に処理するためのモジュールバンドラー。複数のファイルを 1 つのファイルにまとめる。さらに、ビルド自動化し、コードを最適化する。<br>
+https://webpack.js.org/
+
+### Webpack のインストール
+
+下記のコマンドにより、Webpack の設定に必要なライブラリを追加する
+
+```
+$ npm i --save-dev webpack webpack-cli webpack-dev-server typescript ts-loader
+```
+
+### Webpack を実行するための設定
+
+- tsconfig.json ファイルの設定
+  - `outDir`は不要のため、コメントアウトする
+  - `SourceMap`をアクティブにし、`true`にする（実行時のブレイクポイント等を設定するソースマップを生成するため）
+- ソースコード内の`import`文からの`.js`の削除<br>
+  ts ファイル内での`import`のパスから、`.js`を削除する（webpack が自動で読み取るため）
+- webpack.config.js ファイルの準備<br>
+  ルートディレクトリに、webpack.config.js ファイルを新規作成し、下記を設定する
+
+  - モード（`mode`）<br>
+    開発モード(`development`)または本番モード(`production`)を指定する
+  - エントリポイント(`entry`)<br>
+    最初に読み取るファイルを指定する
+  - 出力先(`output`)<br>
+    バンドルされたファイルのファイル名および出力先を指定する（`__dirname`は現在のディレクトリ）
+  - 開発ツール（`devtool`）<br>
+    開発に使用するツールを設定する
+  - モジュールの設定(`module`)
+    - `rules`：バンドル化を実行する際のルールを指定する。`test`は対象ファイル（正規表現で指定）、`use`は使用するローダー、`exclude`はバンドル対象外とするフォルダを指定
+  - 拡張子の補完(`resolve`)
+    - `extensions`：`import`文のパスに補完する拡張子を設定する
+
+  ```javascript
+  const path = require("path");
+
+  module.exports = {
+    mode: "development",
+    entry: "./src/app.ts",
+    output: {
+      filename: "bundle.js",
+      path: path.resolve(__dirname, "dist"),
+      publicPath: "/dist",
+    },
+    devServer: {
+      static: [
+        {
+          directory: path.resolve(__dirname, "dist"),
+          publicPath: "/dist",
+        },
+        {
+          directory: __dirname,
+          publicPath: "/",
+        },
+      ],
+    },
+    devtool: "eval",
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          use: "ts-loader",
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      extensions: [".ts", ".js"],
+    },
+  };
+  ```
+
+- Webpack の実行コマンドを設定<br>
+  package.json ファイルのスクリプトに、Webpack を実行するコマンドを設定する
+  ```json
+  "scripts": {
+    "start": "webpack serve --mode development --config webpack.config.js",
+    "build": "webpack"
+  },
+  ```
+
+### Webpack の実行
+
+下記コマンドを実行する
+
+```
+$ npm run build
+```
+
+### 本番用の Webpack の設定
+
+- プラグインの追加<br>
+  不要なソースファイルを削除するプラグインを追加する
+
+  ```
+  $ npm i --save-dev clean-webpack-plugin
+  ```
+
+- 本番用の Webpack 設定ファイルの準備<br>
+  ルートディレクトリに webpack.config.prod.js ファイルを新規作成し、下記を記載する
+
+  - `mode`を`production`に設定
+  - `devtool`を`false`に設定
+  - plugin に clean-webpack-plugin を追加
+
+  ```javascript
+  const path = require("path");
+  const CleanPlugin = require("clean-webpack-plugin");
+
+  module.exports = {
+    mode: "production",
+    entry: "./src/app.ts",
+    output: {
+      filename: "bundle.js",
+      path: path.resolve(__dirname, "dist"),
+    },
+    devServer: {
+      static: [
+        {
+          directory: path.resolve(__dirname, "dist"),
+          publicPath: "/dist",
+        },
+        {
+          directory: __dirname,
+          publicPath: "/",
+        },
+      ],
+    },
+    devtool: false,
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          use: "ts-loader",
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      extensions: [".ts", ".js"],
+    },
+    plugins: [new CleanPlugin.CleanWebpackPlugin()],
+  };
+  ```
+
+- 本番用 Webpack を実行するスクリプトの追加
+  ```json
+  "scripts": {
+    "build": "webpack --config webpack.config.js"
+  },
+  ```
