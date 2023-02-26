@@ -2,6 +2,7 @@ import _ from "lodash";
 import { Product } from "./product.model";
 import "reflect-metadata";
 import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 console.log(_.shuffle([1, 2, 3]));
 
@@ -27,3 +28,14 @@ const loadedProducts = plainToInstance(Product, products);
 for (let product of loadedProducts) {
   console.log(product.getInformation());
 }
+
+// class-validator
+const newProd = new Product("", -100);
+validate(newProd).then((errors) => {
+  if (errors.length > 0) {
+    console.log("エラー発生");
+    console.log(errors);
+  } else {
+    console.log(newProd.getInformation());
+  }
+});
