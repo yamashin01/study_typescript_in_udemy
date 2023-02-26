@@ -684,3 +684,103 @@ $ npm run build
     "build": "webpack --config webpack.config.js"
   },
   ```
+
+## サードパーティライブラリ
+
+### lodash
+
+javascript のサードパーティライブラリを使う場合、ライブラリとは別にそのファイルに依存する型定義ファイルのインストールが必要なことが多い。
+
+```
+$ npm i --save lodash
+$ npm i --save-dev @types/lodash
+```
+
+### アンビエント宣言(`declare`)
+
+JavaScript コードから提供される変数や関数の型宣言を行い、TypeScript で活用する。存在することが明らかな JavsScript の変数や関数を用いる際に利用。
+
+```javascript
+<script>var GLOBAL = "グローバル";</script>
+```
+
+```typescript
+declare var GLOBAL: string;
+console.log(GLOBAL);
+```
+
+### class-transformer
+
+通常のオブジェクトをインスタンス化するライブラリ。
+
+```
+$ npm i class-transformer --save
+$ npm i reflect-metadata --save
+```
+
+tsconfig.json ファイルの`module`を`CommonJS`に設定する必要がある。
+
+```json
+"module": "CommonJS", /* Specify what module code is generated. */
+```
+
+```typescript
+import { Product } from "./product.model";
+import "reflect-metadata";
+import { plainToInstance } from "class-transformer";
+
+const products = [
+  { title: "商品A", price: 100 },
+  { title: "商品B", price: 200 },
+];
+
+// PlainToInstanceで、通常のオブジェクトであるproductsをProductクラスのインスタンスに変換する
+const loadedProducts = plainToInstance(Product, products);
+
+for (let product of loadedProducts) {
+  console.log(product.getInformation());
+}
+```
+
+### class-validator
+
+指定した値の validate を行うライブラリ。値のチェックを行い、エラー出力を行う。デコレータと同じように用いる。
+
+```
+$ npm i class-validator --save
+```
+
+```typescript
+import { IsNotEmpty, IsNumber, IsPositive } from "class-validator";
+
+export class Product {
+  @IsNotEmpty() // 空文字出ない
+  title: string;
+  @IsNumber() // 数値である
+  @IsPositive() // 正の値である
+  price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this.price = p;
+  }
+
+  getInformation() {
+    console.log(this.title, this.price);
+  }
+}
+```
+
+```typescript
+import { validate } from "class-validator";
+import { Product } from "./product.model";
+
+const newProd = new Product("", -100);
+validate(newProd).then((errors) => {
+  if (errors.length > 0) {
+    console.log(errors);
+  } else {
+    console.log(newProd.getInformation());
+  }
+});
+```
