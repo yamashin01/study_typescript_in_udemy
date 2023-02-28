@@ -1,13 +1,7 @@
 import React from "react";
+import { TodoListProps } from "../todo.model";
 import "./TodoList.css";
 
-interface TodoListProps {
-  items: {
-    id: string;
-    text: string;
-  }[];
-  onDeleteTodo: (id: string) => void;
-}
 const TodoList: React.FC<TodoListProps> = (props) => {
   return (
     <ul>
